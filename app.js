@@ -8,46 +8,49 @@ import {
   collection
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { GRID_SIZE, members, setObjects, objects, setMembers } from "./data.js";
+import { GRID_COLS, GRID_ROWS, members, setObjects, objects, setMembers } from "./data.js";
 import { getObjectAt, canPlace } from "./grid.js";
 import * as ui from "./ui.js";
 
 const grid = document.getElementById("grid");
+
+let deleteMode = false;
+
+const btn = document.getElementById("deleteModeBtn");
+
+btn.onclick = () => {
+  deleteMode = !deleteMode;
+
+  btn.textContent = deleteMode ? "削除モードON" : "削除モードOFF";
+  btn.style.background = deleteMode ? "red" : "";
+
+  // ★ ここ追加（重要）
+  document.body.classList.toggle("delete-mode", deleteMode);
+};
 
 // ==========================
 // 初期化
 // ==========================
 function initGrid() {
 
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
+  for (let y = 0; y < GRID_ROWS; y++) {
+    for (let x = 0; x < GRID_COLS; x++) {
 
       const cell = document.createElement("div");
       cell.className = "cell";
 
-      let lastTap = 0;
-
       cell.onclick = async () => {
 
-        const now = Date.now();
-
-        // ===== ダブルタップ判定 =====
-        if (now - lastTap < 300) {
-
+        if (deleteMode) {
           const obj = getObjectAt(x, y);
           if (!obj) return;
 
           if (confirm("削除する？")) {
             await deleteObjectAt(x, y);
           }
-
-          lastTap = 0;
           return;
         }
 
-        lastTap = now;
-
-        // ===== 通常タップ =====
         ui.openSheet(x, y);
       };
 
@@ -111,42 +114,66 @@ function render() {
   for (let i = 0; i < cells.length; i++) {
 
     const cell = cells[i];
-    const x = i % GRID_SIZE;
-    const y = Math.floor(i / GRID_SIZE);
+    const x = i % GRID_COLS;
+    const y = Math.floor(i / GRID_COLS);
 
+    // ★ 完全リセット
     cell.className = "cell";
-    cell.textContent = "";
+    cell.innerHTML = "";
+
+    // ★ クリック再設定（これが重要）
+    cell.onclick = async () => {
+
+      if (deleteMode) {
+        const obj = getObjectAt(x, y);
+        if (!obj) return;
+
+        if (confirm("削除する？")) {
+          await deleteObjectAt(x, y);
+        }
+        return;
+      }
+
+      ui.openSheet(x, y);
+    };
 
     const obj = getObjectAt(x, y);
 
     if (obj) {
 
       if (obj.type === "player") {
+
         const m = members.find(m => m.id === obj.memberId);
+        if (!m) continue;
 
-        if (m) {
-          cell.textContent = m.name;
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "cell-name";
+        nameDiv.textContent = m.name;
 
-          // ===== FCカラー適用 =====
-          if (m.furnace.startsWith("FC")) {
-            const lv = parseInt(m.furnace.replace("FC",""));
-            cell.classList.add(`fc${Math.min(lv,10)}`);
-          }
+        const furnaceDiv = document.createElement("div");
+        furnaceDiv.className = "cell-furnace";
+        furnaceDiv.textContent = m.furnace;
+
+        cell.appendChild(nameDiv);
+        cell.appendChild(furnaceDiv);
+
+        if (m.furnace.startsWith("FC")) {
+          const lv = parseInt(m.furnace.replace("FC",""));
+          cell.classList.add(`fc${Math.min(lv,10)}`);
         }
 
       } else if (obj.type === "flag") {
         cell.textContent = "🚩";
-
       } else if (obj.type === "trap") {
         cell.textContent = "🪤";
-
       } else if (obj.type === "base") {
         cell.textContent = "🏰";
       }
+
+      drawMultiBorder(cell, obj, x, y);
     }
   }
 }
-
 // ==========================
 // 削除
 // ==========================
@@ -204,7 +231,22 @@ onSnapshot(collection(db, "members"), snap => {
     id: d.id,
     ...d.data()
   })));
+
+  render();
 });
+
+function drawMultiBorder(cell, obj, x, y) {
+
+  const isTop = y === obj.y;
+  const isBottom = y === obj.y + obj.size - 1;
+  const isLeft = x === obj.x;
+  const isRight = x === obj.x + obj.size - 1;
+
+  if (isTop) cell.classList.add("border-top");
+  if (isBottom) cell.classList.add("border-bottom");
+  if (isLeft) cell.classList.add("border-left");
+  if (isRight) cell.classList.add("border-right");
+}
 
 // ==========================
 initGrid();
