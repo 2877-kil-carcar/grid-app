@@ -6,6 +6,19 @@ body {
   overflow: hidden;
 }
 
+#sheet {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 60%;
+  transform: translateY(100%);
+  pointer-events: none; /* ★追加 */
+}
+
+#sheet.show {
+  transform: translateY(0);
+  pointer-events: auto; /* ★追加 */
+}
 /* ★ 外枠（スクロール用） */
 #gridWrapper {
   width: 100vw;

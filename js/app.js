@@ -121,13 +121,21 @@ function render() {
     cell.className = "cell";
     cell.innerHTML = "";
 
-    // ★ border系リセット（これが重要）
-    cell.classList.remove(
-      "border-top",
-      "border-bottom",
-      "border-left",
-      "border-right"
-    );
+    // ★ クリック再設定（これが重要）
+    cell.onclick = async () => {
+
+      if (deleteMode) {
+        const obj = getObjectAt(x, y);
+        if (!obj) return;
+
+        if (confirm("削除する？")) {
+          await deleteObjectAt(x, y);
+        }
+        return;
+      }
+
+      ui.openSheet(x, y);
+    };
 
     const obj = getObjectAt(x, y);
 
@@ -166,7 +174,6 @@ function render() {
     }
   }
 }
-
 // ==========================
 // 削除
 // ==========================
