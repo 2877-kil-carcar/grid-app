@@ -120,9 +120,12 @@ ui.setOnSelectCallback(async (type, memberId, pos) => {
     }
   }
 
-  let size = 1;
-  if (type === "player") size = 2;
-  if (type === "trap" || type === "base") size = 3;
+let size = 1;
+
+if (type === "player") size = 2;
+if (type === "food") size = 2;   // ★ 同盟資源 2x2
+
+if (type === "trap" || type === "base" || type === "mine") size = 3; // ★ 採取場 3x3
 
   if (type === "player") {
     const existing = objects.find(o =>
