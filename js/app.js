@@ -16,6 +16,7 @@ const grid = document.getElementById("grid");
 
 let deleteMode = false;
 let activeCellPos = null;
+let flashCellPos = null;
 
 const btn = document.getElementById("deleteModeBtn");
 
@@ -243,6 +244,11 @@ function render() {
     if (activeCellPos && activeCellPos.x === x && activeCellPos.y === y) {
       cell.classList.add("active");
     }
+
+    // ★ ここに追加
+    if (flashCellPos && flashCellPos.x === x && flashCellPos.y === y) {
+    cell.classList.add("flash");
+    }
   }
 }
 
@@ -334,10 +340,12 @@ export function jumpTo(x, y) {
   const scrollX = x * cellSize;
   const scrollY = y * cellSize;
 
-  // ★ 先にハイライト位置更新
+  // ★ 通常カーソル
   activeCellPos = { x, y };
 
-  // ★ 再描画（これが重要）
+  // ★ フラッシュ用
+  flashCellPos = { x, y };
+
   render();
 
   wrapper.scrollTo({
@@ -345,6 +353,12 @@ export function jumpTo(x, y) {
     top: scrollY - 100,
     behavior: "smooth"
   });
+
+  // ★ 1秒後に消す
+  setTimeout(() => {
+    flashCellPos = null;
+    render();
+  }, 800);
 }
 
 let scale = 1;
@@ -354,10 +368,27 @@ const wrapper = document.getElementById("gridWrapper");
 wrapper.addEventListener("wheel", (e) => {
   e.preventDefault();
 
+  const rect = wrapper.getBoundingClientRect();
+
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const prevScale = scale;
+
   const delta = e.deltaY > 0 ? -0.1 : 0.1;
   scale = Math.min(Math.max(0.5, scale + delta), 2);
 
-  document.getElementById("grid").style.transform = `scale(${scale})`;
+  const gridEl = document.getElementById("grid");
+
+  const scrollLeft = wrapper.scrollLeft;
+  const scrollTop = wrapper.scrollTop;
+
+  const ratio = scale / prevScale;
+
+  wrapper.scrollLeft = (scrollLeft + mouseX) * ratio - mouseX;
+  wrapper.scrollTop  = (scrollTop  + mouseY) * ratio - mouseY;
+
+  gridEl.style.transform = `scale(${scale})`;
 });
 
 let lastDist = null;
@@ -372,9 +403,18 @@ wrapper.addEventListener("touchmove", (e) => {
     const dist = Math.sqrt(dx*dx + dy*dy);
 
     if (lastDist) {
-      const delta = dist - lastDist;
-      scale = Math.min(Math.max(0.5, scale + delta * 0.005), 2);
-      document.getElementById("grid").style.transform = `scale(${scale})`;
+
+    const prevScale = scale;
+
+    const delta = dist - lastDist;
+    scale = Math.min(Math.max(0.5, scale + delta * 0.005), 2);
+
+    const ratio = scale / prevScale;
+
+    wrapper.scrollLeft *= ratio;
+    wrapper.scrollTop  *= ratio;
+
+    document.getElementById("grid").style.transform = `scale(${scale})`;
     }
 
     lastDist = dist;

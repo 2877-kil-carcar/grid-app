@@ -173,3 +173,20 @@ body.edit-mode {
 .cell.player-normal {
   background: #ffffff;
 }
+
+/* ★ ジャンプフラッシュ */
+.cell.flash {
+  animation: flashAnim 0.8s ease;
+}
+
+@keyframes flashAnim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255,255,0,0.9);
+  }
+  50% {
+    box-shadow: 0 0 20px 10px rgba(255,255,0,0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255,255,0,0);
+  }
+}
