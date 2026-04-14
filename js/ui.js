@@ -23,6 +23,7 @@ function buildList() {
   input.placeholder = "検索...";
   input.value = filterText;
   input.style.width = "100%";
+  input.style.boxSizing = "border-box";
   input.style.padding = "10px";
   input.style.marginBottom = "10px";
   input.style.borderRadius = "10px";
