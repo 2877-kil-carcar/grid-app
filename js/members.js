@@ -8,9 +8,7 @@ import {
   addDoc,
   onSnapshot,
   deleteDoc,
-  doc,
-  query,
-  orderBy
+  doc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const nameInput = document.getElementById("name");
@@ -19,7 +17,6 @@ const list = document.getElementById("memberList");
 
 let memberCount = 0;
 
-// ===== 初期化 =====
 function initFurnace() {
   for (let i = 1; i <= 30; i++) addOption(i);
   for (let i = 1; i <= 10; i++) addOption("FC" + i);
@@ -32,9 +29,7 @@ function addOption(val) {
   furnaceSelect.appendChild(opt);
 }
 
-// ===== 追加 =====
 async function addMember() {
-
   if (memberCount >= 100) {
     alert("100人まで");
     return;
@@ -43,21 +38,23 @@ async function addMember() {
   const name = nameInput.value.trim();
   const furnace = furnaceSelect.value;
 
-  if (!name) return alert("名前必須");
+  if (!name) {
+    alert("名前必須");
+    return;
+  }
 
-  // ★ 重複チェック
-const exists = window._docs.find(d => d.data().name === name);
+  const exists = window._docs.find(d => d.data().name === name);
 
   if (exists) {
     if (!confirm("既に存在。溶鉱炉を更新する？")) return;
 
-    // 更新
-    const docSnap = [...window._docs].find(d => d.data().name === name);
-    await setDoc(doc(db, "members", docSnap.id), {
+    await setDoc(doc(db, "members", exists.id), {
       name,
       furnace,
-      createdAt: docSnap.data().createdAt
+      createdAt: exists.data().createdAt
     });
+
+    nameInput.value = "";
     return;
   }
 
@@ -70,38 +67,34 @@ const exists = window._docs.find(d => d.data().name === name);
   nameInput.value = "";
 }
 
-// ===== 表示 =====
-const q = collection(db, "members"); // ★これに変更
+const q = collection(db, "members");
 
 onSnapshot(q, snap => {
-
   window._docs = snap.docs;
-
   memberCount = snap.size;
   list.innerHTML = "";
 
   snap.docs
-    .sort((a,b)=>a.data().name.localeCompare(b.data().name))
+    .sort((a, b) => a.data().name.localeCompare(b.data().name))
     .forEach(docSnap => {
+      const d = docSnap.data();
 
-    const d = docSnap.data();
+      const div = document.createElement("div");
+      div.textContent = `${d.name} (${d.furnace})`;
 
-    const div = document.createElement("div");
-    div.textContent = `${d.name} (${d.furnace})`;
+      div.onclick = async () => {
+        if (confirm("削除する？")) {
+          await deleteDoc(doc(db, "members", docSnap.id));
+        }
+      };
 
-    div.onclick = async () => {
-      if (confirm("削除する？")) {
-        await deleteDoc(doc(db, "members", docSnap.id));
-      }
-    };
-
-    list.appendChild(div);
-  });
+      list.appendChild(div);
+    });
 });
 
+window.addMember = addMember;
 window.goBack = () => {
   location.href = "./index.html";
 };
 
 initFurnace();
-window.addMember = addMember;

@@ -3,9 +3,51 @@ body {
   background: #0f172a;
   color: white;
   font-family: sans-serif;
-  overflow-y: auto; /* ★ここ修正 */
+  overflow: hidden;
 }
 
+/* ===== 上部固定バー ===== */
+#topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: #0f172a;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+#topBar h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+#topActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#topActions button,
+#topActions a {
+  position: relative;
+  z-index: 2001;
+  touch-action: manipulation;
+}
+
+#topActions a {
+  color: white;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  display: inline-block;
+}
+
+/* ===== シート ===== */
 #sheet {
   position: fixed;
   bottom: 0;
@@ -24,11 +66,12 @@ body {
   pointer-events: auto;
 }
 
-/* ★ シート内部スクロール */
 .sheet-content {
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 #list {
@@ -47,28 +90,26 @@ body {
   margin-top: 10px;
 }
 
-/* 外枠（スクロール用） */
+/* ===== グリッド領域 ===== */
 #gridWrapper {
-  width: 100vw;
-  height: calc(100vh - 120px);
+  position: fixed;
+  top: 88px; /* 上部バー分 */
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: auto;
+  touch-action: pan-x pan-y;
 }
 
-/* ★ 上部UIを最前面にする */
-h3, button, a {
-  position: relative;
-  z-index: 1000;
-}
-
-/* グリッド */
 #grid {
   display: grid;
   grid-template-columns: repeat(48, 34px);
   gap: 3px;
   padding: 8px;
+  transform-origin: top left;
 }
 
-/* マス */
+/* ===== マス ===== */
 .cell {
   width: 34px;
   height: 34px;
@@ -83,27 +124,36 @@ h3, button, a {
   font-size: 9px;
   font-weight: 600;
   position: relative;
+  color: #000;
 }
 
-/* タップ位置ハイライト
-   background ではなく outline / inset で出す
-   FC色や他色に潰されにくくする */
+.cell:active {
+  transform: scale(0.95);
+}
+
+/* タップ位置ハイライト */
 .cell.active {
   outline: 2px solid rgba(255, 255, 0, 0.95);
   outline-offset: -2px;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 0, 0.75);
 }
 
-/* タップ */
-.cell:active {
-  transform: scale(0.95);
+/* ジャンプフラッシュ */
+.cell.flash {
+  animation: flashAnim 0.8s ease;
 }
 
-/* ★ 削除モード（編集モード時のみ有効） */
+@keyframes flashAnim {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,0,0.9); }
+  50% { box-shadow: 0 0 20px 10px rgba(255,255,0,0.9); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,0,0); }
+}
+
+/* 削除モード */
 body.edit-mode.delete-mode .cell {
   background: rgba(0,150,255,0.3) !important;
   border: 1px dashed rgba(0,150,255,0.6) !important;
-  color: #fff !important; /* ★白文字 */
+  color: #fff !important;
 }
 
 body.edit-mode.delete-mode .cell.player-normal {
@@ -125,6 +175,11 @@ body.edit-mode.delete-mode .cell.player-normal {
 .fc5, .fc6, .fc7, .fc8, .fc9, .fc10 {
   color: #fff;
   font-weight: bold;
+}
+
+/* 通常炉は白 */
+.cell.player-normal {
+  background: #ffffff;
 }
 
 /* テキスト配置 */
@@ -162,31 +217,4 @@ body.edit-mode.delete-mode .cell.player-normal {
 
 body.edit-mode {
   outline: 3px solid #16a34a;
-}
-
-/* ★ マス文字は黒 */
-.cell {
-  color: #000;
-}
-
-/* playerだけ白（通常炉） */
-.cell.player-normal {
-  background: #ffffff;
-}
-
-/* ★ ジャンプフラッシュ */
-.cell.flash {
-  animation: flashAnim 0.8s ease;
-}
-
-@keyframes flashAnim {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255,255,0,0.9);
-  }
-  50% {
-    box-shadow: 0 0 20px 10px rgba(255,255,0,0.9);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255,255,0,0);
-  }
 }

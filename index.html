@@ -3,33 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <title>配置アプリ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<h3>配置管理</h3>
+  <div id="topBar">
+    <h3>配置管理</h3>
 
-<button id="deleteModeBtn">削除モードOFF</button>
-<button id="editModeBtn">編集モードOFF</button>
-
-<a id="memberLink" href="./members.html">同盟員登録</a>
-
-
-<!-- ★ グリッド -->
-<div id="gridWrapper">
-  <div id="grid"></div>
-</div>
-
-<!-- ボトムシート -->
-<div id="sheet">
-  <div class="sheet-content">
-    <div id="list"></div>
-    <button onclick="closeSheet()">閉じる</button>
+    <div id="topActions">
+      <button id="deleteModeBtn" type="button">削除モードOFF</button>
+      <button id="editModeBtn" type="button">編集モードOFF</button>
+      <a id="memberLink" href="./members.html">同盟員登録</a>
+    </div>
   </div>
-</div>
 
-<script type="module" src="./js/app.js"></script>
+  <div id="gridWrapper">
+    <div id="grid"></div>
+  </div>
 
+  <div id="sheet">
+    <div class="sheet-content">
+      <div id="list"></div>
+      <button type="button" onclick="closeSheet()">閉じる</button>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>

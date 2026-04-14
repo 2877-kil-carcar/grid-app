@@ -8,21 +8,26 @@
 </head>
 <body>
 
-<h3>同盟員登録</h3>
+  <div id="topBar">
+    <h3>同盟員登録</h3>
+    <div id="topActions">
+      <button type="button" onclick="goBack()">戻る</button>
+    </div>
+  </div>
 
-<div>
-  名前：<input id="name">
-  溶鉱炉：
-  <select id="furnace"></select>
-  <button onclick="addMember()">追加</button>
-</div>
+  <div style="padding: 110px 12px 12px 12px; box-sizing: border-box;">
+    <div>
+      名前：<input id="name">
+      溶鉱炉：
+      <select id="furnace"></select>
+      <button type="button" onclick="addMember()">追加</button>
+    </div>
 
-<button onclick="goBack()">戻る</button>
+    <hr>
 
-<hr>
+    <div id="memberList"></div>
+  </div>
 
-<div id="memberList"></div>
-
-<script type="module" src="js/members.js"></script>
+  <script type="module" src="js/members.js"></script>
 </body>
 </html>
