@@ -231,6 +231,8 @@ onSnapshot(collection(db, "members"), snap => {
     id: d.id,
     ...d.data()
   })));
+
+  render();
 });
 
 function drawMultiBorder(cell, obj, x, y) {
