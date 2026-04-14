@@ -3,6 +3,7 @@ import { jumpTo } from "./app.js";
 
 let current = null;
 let filterText = "";
+let inputEl = null;
 
 export function openSheet(x, y) {
   current = { x, y };
@@ -17,27 +18,42 @@ export function closeSheet() {
 function buildList() {
 
   const list = document.getElementById("list");
-  list.innerHTML = "";
 
-  // ===== 検索ボックス =====
-  const input = document.createElement("input");
-  input.placeholder = "検索...";
-  input.value = filterText;
+  // ★ 初回だけinput作る
+  if (!inputEl) {
 
-  input.style.width = "100%";
-  input.style.boxSizing = "border-box";
-  input.style.padding = "10px";
-  input.style.marginBottom = "10px";
-  input.style.borderRadius = "10px";
+    inputEl = document.createElement("input");
+    inputEl.placeholder = "検索...";
 
-  input.oninput = (e) => {
-    filterText = e.target.value.toLowerCase();
-    setTimeout(buildList, 0); // ★これが正解
-  };
+    inputEl.style.width = "100%";
+    inputEl.style.boxSizing = "border-box";
+    inputEl.style.padding = "10px";
+    inputEl.style.marginBottom = "10px";
+    inputEl.style.borderRadius = "10px";
 
-  list.appendChild(input);
+    inputEl.oninput = (e) => {
+      filterText = e.target.value.toLowerCase();
+      renderListOnly(); // ★ここが重要
+    };
 
-  // ===== 同盟員（名前順＋検索）=====
+    list.appendChild(inputEl);
+  }
+
+  inputEl.value = filterText;
+
+  renderListOnly();
+}
+
+function renderListOnly() {
+
+  const list = document.getElementById("list");
+
+  // ★ input以外を消す
+  while (list.children.length > 1) {
+    list.removeChild(list.lastChild);
+  }
+
+  // ===== 同盟員 =====
   const filtered = members
     .filter(m => m.name.toLowerCase().includes(filterText))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -49,7 +65,6 @@ function buildList() {
     row.style.gap = "8px";
     row.style.marginBottom = "6px";
 
-    // ★ 左：配置用
     const placeBtn = document.createElement("div");
     placeBtn.className = "item";
     placeBtn.textContent = m.name;
@@ -60,7 +75,6 @@ function buildList() {
 
     row.appendChild(placeBtn);
 
-    // ★ 右：配置済みならジャンプボタン表示
     const obj = findMemberObject(m.id);
     if (obj) {
       const jumpBtn = document.createElement("div");
@@ -86,26 +100,26 @@ function buildList() {
   addItem(list, "⛏️ 大型採取場", () => select("mine"));
   addItem(list, "🍕 同盟資源", () => select("food"));
 
-addDivider(list);
+  addDivider(list);
 
-const unplaced = members.filter(m =>
-  !objects.find(o => o.type === "player" && o.memberId === m.id)
-);
+  const unplaced = members.filter(m =>
+    !objects.find(o => o.type === "player" && o.memberId === m.id)
+  );
 
-if (unplaced.length > 0) {
+  if (unplaced.length > 0) {
 
-  const title = document.createElement("div");
-  title.textContent = "未配置";
-  title.style.marginTop = "10px";
-  title.style.fontWeight = "bold";
-  list.appendChild(title);
+    const title = document.createElement("div");
+    title.textContent = "未配置";
+    title.style.marginTop = "10px";
+    title.style.fontWeight = "bold";
+    list.appendChild(title);
 
-  unplaced.forEach(m => {
-    addItem(list, "⚠ " + m.name, () => {
-      select("player", m.id);
+    unplaced.forEach(m => {
+      addItem(list, "⚠ " + m.name, () => {
+        select("player", m.id);
+      });
     });
-  });
-}  
+  }
 }
 
 function findMemberObject(memberId) {
