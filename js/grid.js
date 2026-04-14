@@ -1,4 +1,5 @@
-import { objects, GRID_SIZE } from "./data.js";
+import { objects, GRID_COLS, GRID_ROWS } from "./data.js";
+
 
 export function getObjectAt(x, y) {
   return objects.find(o =>
@@ -8,7 +9,7 @@ export function getObjectAt(x, y) {
 }
 
 export function canPlace(x, y, size) {
-  if (x + size > GRID_SIZE || y + size > GRID_SIZE) return false;
+  if (x + size > GRID_COLS || y + size > GRID_ROWS) return false;
 
   for (let dx = 0; dx < size; dx++) {
     for (let dy = 0; dy < size; dy++) {

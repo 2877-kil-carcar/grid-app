@@ -8,7 +8,7 @@ import {
   collection
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { GRID_SIZE, members, setObjects, objects, setMembers } from "./data.js";
+import { GRID_COLS, GRID_ROWS, members, setObjects, objects, setMembers } from "./data.js";
 import { getObjectAt, canPlace } from "./grid.js";
 import * as ui from "./ui.js";
 
@@ -33,15 +33,14 @@ btn.onclick = () => {
 // ==========================
 function initGrid() {
 
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
+  for (let y = 0; y < GRID_ROWS; y++) {
+    for (let x = 0; x < GRID_COLS; x++) {
 
       const cell = document.createElement("div");
       cell.className = "cell";
 
       cell.onclick = async () => {
 
-        // 削除モード
         if (deleteMode) {
           const obj = getObjectAt(x, y);
           if (!obj) return;
@@ -52,7 +51,6 @@ function initGrid() {
           return;
         }
 
-        // ★これがないと開かない
         ui.openSheet(x, y);
       };
 
@@ -116,8 +114,8 @@ function render() {
   for (let i = 0; i < cells.length; i++) {
 
     const cell = cells[i];
-    const x = i % GRID_SIZE;
-    const y = Math.floor(i / GRID_SIZE);
+    const x = i % GRID_COLS;
+    const y = Math.floor(i / GRID_COLS);
 
     // ★ 完全リセット
     cell.className = "cell";

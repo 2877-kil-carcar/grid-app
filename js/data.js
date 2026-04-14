@@ -1,4 +1,5 @@
-export const GRID_SIZE = 15;
+export const GRID_COLS = 48; // 横
+export const GRID_ROWS = 27; // 縦
 
 export let members = [];
 

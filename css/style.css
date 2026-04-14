@@ -16,7 +16,7 @@ body {
 /* ★ グリッド */
 #grid {
   display: grid;
-  grid-template-columns: repeat(30, 50px); /* ←ここが重要 */
+  grid-template-columns: repeat(48, 50px);
   gap: 4px;
   padding: 10px;
 }
