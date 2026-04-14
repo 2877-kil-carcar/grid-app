@@ -395,14 +395,19 @@ let lastDist = null;
 
 wrapper.addEventListener("touchmove", (e) => {
 
-  if (e.touches.length === 2) {
+  // ★ 2本指以外は完全無視
+  if (e.touches.length !== 2) {
+    return;
+  }
 
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
+  e.preventDefault(); // ★ズーム時のみ阻止
 
-    const dist = Math.sqrt(dx*dx + dy*dy);
+  const dx = e.touches[0].clientX - e.touches[1].clientX;
+  const dy = e.touches[0].clientY - e.touches[1].clientY;
 
-    if (lastDist) {
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (lastDist) {
 
     const prevScale = scale;
 
@@ -415,14 +420,15 @@ wrapper.addEventListener("touchmove", (e) => {
     wrapper.scrollTop  *= ratio;
 
     document.getElementById("grid").style.transform = `scale(${scale})`;
-    }
-
-    lastDist = dist;
   }
+
+  lastDist = dist;
 });
 
-wrapper.addEventListener("touchend", () => {
-  lastDist = null;
+wrapper.addEventListener("touchend", (e) => {
+  if (e.touches.length < 2) {
+    lastDist = null;
+  }
 });
 
 const memberLink = document.getElementById("memberLink");
