@@ -18,6 +18,8 @@ let deleteMode = false;
 
 let activeCell = null;
 
+let activeCellPos = null;
+
 const btn = document.getElementById("deleteModeBtn");
 
 btn.onclick = () => {
@@ -28,6 +30,31 @@ btn.onclick = () => {
 
   // ★ ここ追加（重要）
   document.body.classList.toggle("delete-mode", deleteMode);
+};
+
+let editMode = false;
+const EDIT_PASSWORD = "des";
+
+const editBtn = document.getElementById("editModeBtn");
+
+editBtn.onclick = () => {
+
+  if (!editMode) {
+    const input = prompt("パスワード入力");
+
+    if (input !== EDIT_PASSWORD) {
+      alert("パスワード違う");
+      return;
+    }
+
+    editMode = true;
+  } else {
+    editMode = false;
+  }
+
+  editBtn.textContent = editMode ? "編集モードON" : "編集モードOFF";
+  editBtn.style.background = editMode ? "#16a34a" : "";
+  document.body.classList.toggle("edit-mode", editMode);
 };
 
 // ==========================
@@ -41,25 +68,21 @@ function initGrid() {
       const cell = document.createElement("div");
       cell.className = "cell";
 
-      cell.onclick = async () => {
-  
-      // ★ ハイライト更新
-      if (activeCell) {
-          activeCell.classList.remove("active");
+      cell.onclick = async () => {  
+      if (!editMode) {
+         return;
       }
-      cell.classList.add("active");
-      activeCell = cell;
-  
-      if (deleteMode) {
-          const obj = getObjectAt(x, y);
-          if (!obj) return;
-  
-          if (confirm("削除する？")) {
-          await deleteObjectAt(x, y);
-          }
-          return;
-      }
-  
+
+      // ★ 座標を記録（これが重要）
+      activeCellPos = { x, y };  
+        if (deleteMode) {
+            const obj = getObjectAt(x, y);
+            if (!obj) return;  
+            if (confirm("削除する？")) {
+            await deleteObjectAt(x, y);
+            }
+            return;
+        }  
       ui.openSheet(x, y);
       };
       grid.appendChild(cell);
