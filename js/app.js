@@ -77,22 +77,30 @@ function initGrid() {
 ui.setOnSelectCallback(async (type, memberId, pos) => {
 
   // 本部は1つまで
-  if (type === "base") {
-    const count = objects.filter(o => o.type === "base").length;
-    if (count >= 1) {
-      alert("本部は1つまで");
-      return;
-    }
-  }
+// 本部は1つまで（移動はOK）
+if (type === "base") {
 
-  // 熊罠は2つまで
-  if (type === "trap") {
-    const count = objects.filter(o => o.type === "trap").length;
-    if (count >= 2) {
+  const existing = objects.find(o => o.type === "base");
+
+  if (existing && !(existing.x === pos.x && existing.y === pos.y)) {
+    alert("本部は1つまで");
+    return;
+  }
+}
+
+// 熊罠は2つまで（移動OK）
+if (type === "trap") {
+
+  const traps = objects.filter(o => o.type === "trap");
+
+  if (traps.length >= 2) {
+    const existsHere = traps.find(o => o.x === pos.x && o.y === pos.y);
+    if (!existsHere) {
       alert("熊罠は2つまで");
       return;
     }
   }
+}
 
   let size = 1;
   if (type === "player") size = 2;
@@ -151,31 +159,42 @@ function render() {
     cell.className = "cell";
     cell.innerHTML = "";
 
-    // ★ クリック処理は render 側で一元化
+    // ★ ここでクリックを設定（最重要）
     cell.onclick = async () => {
 
-      // まずタップ位置を記録して再描画
       activeCellPos = { x, y };
-      render();
-
-      // 編集モードOFFならここで終了
-      if (!editMode) {
-        return;
-      }
 
       // 削除モード
       if (deleteMode) {
+
+        if (!editMode) {
+          render();
+          return;
+        }
+
         const obj = getObjectAt(x, y);
-        if (!obj) return;
+        if (!obj) {
+          render();
+          return;
+        }
 
         if (confirm("削除する？")) {
           await deleteObjectAt(x, y);
         }
+
+        render();
         return;
       }
 
-      // 通常は選択シート
+      // 編集OFF
+      if (!editMode) {
+        render();
+        return;
+      }
+
+      // 通常
       ui.openSheet(x, y);
+      //render();
     };
 
     const obj = getObjectAt(x, y);
@@ -185,13 +204,7 @@ function render() {
       if (obj.type === "player") {
 
         const m = members.find(m => m.id === obj.memberId);
-        if (!m) {
-          // ハイライトだけは残す
-          if (activeCellPos && activeCellPos.x === x && activeCellPos.y === y) {
-            cell.classList.add("active");
-          }
-          continue;
-        }
+        if (!m) continue;
 
         const nameDiv = document.createElement("div");
         nameDiv.className = "cell-name";
@@ -205,24 +218,28 @@ function render() {
         cell.appendChild(furnaceDiv);
 
         if (m.furnace.startsWith("FC")) {
-          const lv = parseInt(m.furnace.replace("FC", ""), 10);
-          cell.classList.add(`fc${Math.min(lv, 10)}`);
+          const lv = parseInt(m.furnace.replace("FC",""));
+          cell.classList.add(`fc${Math.min(lv,10)}`);
+        } else {
+          cell.classList.add("player-normal");
         }
 
       } else if (obj.type === "flag") {
         cell.textContent = "🚩";
-
       } else if (obj.type === "trap") {
-        cell.textContent = "🪤";
-
+        cell.textContent = "🐻";
       } else if (obj.type === "base") {
-        cell.textContent = "🏰";
+        cell.textContent = "🕌";
+      } else if (obj.type === "mine") {
+        cell.textContent = "⛏️";
+      } else if (obj.type === "food") {
+        cell.textContent = "🍕";
       }
 
       drawMultiBorder(cell, obj, x, y);
     }
 
-    // ★ 最後にハイライト復元
+    // ★ ハイライト
     if (activeCellPos && activeCellPos.x === x && activeCellPos.y === y) {
       cell.classList.add("active");
     }
@@ -305,5 +322,67 @@ onSnapshot(collection(db, "members"), snap => {
   render();
 });
 
+// ==========================
+// ジャンプ
+// ==========================
+export function jumpTo(x, y) {
+
+  const wrapper = document.getElementById("gridWrapper");
+
+  const cellSize = 34 + 3;
+
+  const scrollX = x * cellSize;
+  const scrollY = y * cellSize;
+
+  // ★ 先にハイライト位置更新
+  activeCellPos = { x, y };
+
+  // ★ 再描画（これが重要）
+  render();
+
+  wrapper.scrollTo({
+    left: scrollX - 100,
+    top: scrollY - 100,
+    behavior: "smooth"
+  });
+}
+
+let scale = 1;
+
+const wrapper = document.getElementById("gridWrapper");
+
+wrapper.addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  scale = Math.min(Math.max(0.5, scale + delta), 2);
+
+  document.getElementById("grid").style.transform = `scale(${scale})`;
+});
+
+let lastDist = null;
+
+wrapper.addEventListener("touchmove", (e) => {
+
+  if (e.touches.length === 2) {
+
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (lastDist) {
+      const delta = dist - lastDist;
+      scale = Math.min(Math.max(0.5, scale + delta * 0.005), 2);
+      document.getElementById("grid").style.transform = `scale(${scale})`;
+    }
+
+    lastDist = dist;
+  }
+});
+
+wrapper.addEventListener("touchend", () => {
+  lastDist = null;
+});
 // ==========================
 initGrid();

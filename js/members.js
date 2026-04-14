@@ -1,3 +1,7 @@
+import { setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+window._docs = [];
+
 import { db } from "./firebase.js";
 import {
   collection,
@@ -41,6 +45,22 @@ async function addMember() {
 
   if (!name) return alert("名前必須");
 
+  // ★ 重複チェック
+const exists = window._docs.find(d => d.data().name === name);
+
+  if (exists) {
+    if (!confirm("既に存在。溶鉱炉を更新する？")) return;
+
+    // 更新
+    const docSnap = [...window._docs].find(d => d.data().name === name);
+    await setDoc(doc(db, "members", docSnap.id), {
+      name,
+      furnace,
+      createdAt: docSnap.data().createdAt
+    });
+    return;
+  }
+
   await addDoc(collection(db, "members"), {
     name,
     furnace,
@@ -51,14 +71,18 @@ async function addMember() {
 }
 
 // ===== 表示 =====
-const q = query(collection(db, "members"), orderBy("createdAt"));
+const q = collection(db, "members"); // ★これに変更
 
 onSnapshot(q, snap => {
+
+  window._docs = snap.docs;
 
   memberCount = snap.size;
   list.innerHTML = "";
 
-  snap.docs.forEach(docSnap => {
+  snap.docs
+    .sort((a,b)=>a.data().name.localeCompare(b.data().name))
+    .forEach(docSnap => {
 
     const d = docSnap.data();
 

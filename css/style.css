@@ -3,7 +3,7 @@ body {
   background: #0f172a;
   color: white;
   font-family: sans-serif;
-  overflow: hidden;
+  overflow-y: auto; /* ★ここ修正 */
 }
 
 #sheet {
@@ -70,10 +70,15 @@ body {
   transform: scale(0.95);
 }
 
-/* 削除モード */
-.delete-mode .cell {
-  background: rgba(0,150,255,0.08);
-  border: 1px dashed rgba(0,150,255,0.3);
+/* ★ 削除モード（編集モード時のみ有効） */
+body.edit-mode.delete-mode .cell {
+  background: rgba(0,150,255,0.3) !important;
+  border: 1px dashed rgba(0,150,255,0.6) !important;
+  color: #fff !important; /* ★白文字 */
+}
+
+body.edit-mode.delete-mode .cell.player-normal {
+  background: rgba(0,150,255,0.3) !important;
 }
 
 /* FC */
@@ -128,4 +133,14 @@ body {
 
 body.edit-mode {
   outline: 3px solid #16a34a;
+}
+
+/* ★ マス文字は黒 */
+.cell {
+  color: #000;
+}
+
+/* playerだけ白（通常炉） */
+.cell.player-normal {
+  background: #ffffff;
 }
