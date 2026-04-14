@@ -19,6 +19,12 @@ body {
   z-index: 999;
 }
 
+/* タップ位置ハイライト */
+.cell.active {
+  background: rgba(255, 255, 0, 0.35);
+  border: 2px solid rgba(255, 255, 0, 0.9);
+}
+
 #sheet.show {
   transform: translateY(0);
   pointer-events: auto;

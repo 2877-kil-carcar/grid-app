@@ -16,6 +16,8 @@ const grid = document.getElementById("grid");
 
 let deleteMode = false;
 
+let activeCell = null;
+
 const btn = document.getElementById("deleteModeBtn");
 
 btn.onclick = () => {
@@ -40,20 +42,26 @@ function initGrid() {
       cell.className = "cell";
 
       cell.onclick = async () => {
-
-        if (deleteMode) {
+  
+      // ★ ハイライト更新
+      if (activeCell) {
+          activeCell.classList.remove("active");
+      }
+      cell.classList.add("active");
+      activeCell = cell;
+  
+      if (deleteMode) {
           const obj = getObjectAt(x, y);
           if (!obj) return;
-
+  
           if (confirm("削除する？")) {
-            await deleteObjectAt(x, y);
+          await deleteObjectAt(x, y);
           }
           return;
-        }
-
-        ui.openSheet(x, y);
+      }
+  
+      ui.openSheet(x, y);
       };
-
       grid.appendChild(cell);
     }
   }
@@ -63,6 +71,22 @@ function initGrid() {
 // 配置処理（移動対応）
 // ==========================
 ui.setOnSelectCallback(async (type, memberId, pos) => {
+  // ★ 制限チェック
+  if (type === "base") {
+    const count = objects.filter(o => o.type === "base").length;
+    if (count >= 1) {
+      alert("本部は1つまで");
+      return;
+    }
+  }
+  
+  if (type === "trap") {
+    const count = objects.filter(o => o.type === "trap").length;
+    if (count >= 2) {
+      alert("熊罠は2つまで");
+      return;
+    }
+  }
 
   let size = 1;
   if (type === "player") size = 2;
