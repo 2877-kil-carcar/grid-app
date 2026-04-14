@@ -68,23 +68,27 @@ function initGrid() {
       const cell = document.createElement("div");
       cell.className = "cell";
 
-      cell.onclick = async () => {  
-      if (!editMode) {
-         return;
-      }
-
-      // ★ 座標を記録（これが重要）
-      activeCellPos = { x, y };  
+      cell.onclick = async () => {
+      
+        // ★ 先にハイライト
+        activeCellPos = { x, y };
+      
+        // ★ 編集モード制御
+        if (!editMode) return;
+      
         if (deleteMode) {
-            const obj = getObjectAt(x, y);
-            if (!obj) return;  
-            if (confirm("削除する？")) {
+          const obj = getObjectAt(x, y);
+          if (!obj) return;
+      
+          if (confirm("削除する？")) {
             await deleteObjectAt(x, y);
-            }
-            return;
-        }  
-      ui.openSheet(x, y);
+          }
+          return;
+        }
+      
+        ui.openSheet(x, y);
       };
+      
       grid.appendChild(cell);
     }
   }
