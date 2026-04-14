@@ -384,5 +384,15 @@ wrapper.addEventListener("touchmove", (e) => {
 wrapper.addEventListener("touchend", () => {
   lastDist = null;
 });
+
+const memberLink = document.getElementById("memberLink");
+
+memberLink.onclick = (e) => {
+
+  if (!editMode) {
+    e.preventDefault();
+    alert("編集モードONで使用可能");
+  }
+};
 // ==========================
 initGrid();

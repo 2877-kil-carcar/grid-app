@@ -99,5 +99,9 @@ onSnapshot(q, snap => {
   });
 });
 
+window.goBack = () => {
+  location.href = "./index.html";
+};
+
 initFurnace();
 window.addMember = addMember;

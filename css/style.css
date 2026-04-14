@@ -27,8 +27,14 @@ body {
 /* 外枠（スクロール用） */
 #gridWrapper {
   width: 100vw;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 120px);
   overflow: auto;
+}
+
+/* ★ 上部UIを最前面にする */
+h3, button, a {
+  position: relative;
+  z-index: 1000;
 }
 
 /* グリッド */
