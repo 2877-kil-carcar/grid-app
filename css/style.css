@@ -27,7 +27,7 @@ body {
 /* 外枠（スクロール用） */
 #gridWrapper {
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 60px);
   overflow: auto;
 }
 
