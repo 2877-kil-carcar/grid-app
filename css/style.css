@@ -1,0 +1,87 @@
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: sans-serif;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px; /* 少し広げる */
+  padding: 10px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 12px;
+
+  /* ★ 空マス視認性アップ */
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* ★ 視認性アップ */
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: 0.1s;
+}
+
+/* タップフィードバック */
+.cell:active {
+  transform: scale(0.95);
+  background: rgba(0,200,255,0.3);
+}
+
+/* ===== ボトムシート ===== */
+#sheet {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 60%;
+  background: #1e293b;
+  transform: translateY(100%);
+  transition: 0.3s;
+  border-radius: 20px 20px 0 0;
+}
+
+#sheet.show {
+  transform: translateY(0);
+}
+
+.sheet-content {
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.item {
+  padding: 14px;
+  margin: 6px 0;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+/* ==========================
+   FCグラデーション
+========================== */
+.fc1  { background: #ffe5e5; }
+.fc2  { background: #ffd6d6; }
+.fc3  { background: #ffbfbf; }
+.fc4  { background: #ffa8a8; }
+.fc5  { background: #ff9191; }
+.fc6  { background: #ff7a7a; }
+.fc7  { background: #ff6363; }
+.fc8  { background: #ff4c4c; }
+.fc9  { background: #ff2a2a; }
+.fc10 { background: #ff0000; }
+
+/* 高レベル強調 */
+.fc5, .fc6, .fc7, .fc8, .fc9, .fc10 {
+  color: #fff;
+  font-weight: bold;
+}
