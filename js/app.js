@@ -41,6 +41,7 @@ function initGrid() {
 
       cell.onclick = async () => {
 
+        // 削除モード
         if (deleteMode) {
           const obj = getObjectAt(x, y);
           if (!obj) return;
@@ -51,6 +52,7 @@ function initGrid() {
           return;
         }
 
+        // ★これがないと開かない
         ui.openSheet(x, y);
       };
 
@@ -117,35 +119,52 @@ function render() {
     const x = i % GRID_SIZE;
     const y = Math.floor(i / GRID_SIZE);
 
+    // ★ 完全リセット
     cell.className = "cell";
-    cell.textContent = "";
+    cell.innerHTML = "";
+
+    // ★ border系リセット（これが重要）
+    cell.classList.remove(
+      "border-top",
+      "border-bottom",
+      "border-left",
+      "border-right"
+    );
 
     const obj = getObjectAt(x, y);
 
     if (obj) {
 
       if (obj.type === "player") {
+
         const m = members.find(m => m.id === obj.memberId);
+        if (!m) continue;
 
-        if (m) {
-          cell.textContent = m.name;
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "cell-name";
+        nameDiv.textContent = m.name;
 
-          // ===== FCカラー適用 =====
-          if (m.furnace.startsWith("FC")) {
-            const lv = parseInt(m.furnace.replace("FC",""));
-            cell.classList.add(`fc${Math.min(lv,10)}`);
-          }
+        const furnaceDiv = document.createElement("div");
+        furnaceDiv.className = "cell-furnace";
+        furnaceDiv.textContent = m.furnace;
+
+        cell.appendChild(nameDiv);
+        cell.appendChild(furnaceDiv);
+
+        if (m.furnace.startsWith("FC")) {
+          const lv = parseInt(m.furnace.replace("FC",""));
+          cell.classList.add(`fc${Math.min(lv,10)}`);
         }
 
       } else if (obj.type === "flag") {
         cell.textContent = "🚩";
-
       } else if (obj.type === "trap") {
         cell.textContent = "🪤";
-
       } else if (obj.type === "base") {
         cell.textContent = "🏰";
       }
+
+      drawMultiBorder(cell, obj, x, y);
     }
   }
 }
@@ -208,6 +227,19 @@ onSnapshot(collection(db, "members"), snap => {
     ...d.data()
   })));
 });
+
+function drawMultiBorder(cell, obj, x, y) {
+
+  const isTop = y === obj.y;
+  const isBottom = y === obj.y + obj.size - 1;
+  const isLeft = x === obj.x;
+  const isRight = x === obj.x + obj.size - 1;
+
+  if (isTop) cell.classList.add("border-top");
+  if (isBottom) cell.classList.add("border-bottom");
+  if (isLeft) cell.classList.add("border-left");
+  if (isRight) cell.classList.add("border-right");
+}
 
 // ==========================
 initGrid();
