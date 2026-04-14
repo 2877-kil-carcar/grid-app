@@ -14,6 +14,20 @@ import * as ui from "./ui.js";
 
 const grid = document.getElementById("grid");
 
+let deleteMode = false;
+
+const btn = document.getElementById("deleteModeBtn");
+
+btn.onclick = () => {
+  deleteMode = !deleteMode;
+
+  btn.textContent = deleteMode ? "削除モードON" : "削除モードOFF";
+  btn.style.background = deleteMode ? "red" : "";
+
+  // ★ ここ追加（重要）
+  document.body.classList.toggle("delete-mode", deleteMode);
+};
+
 // ==========================
 // 初期化
 // ==========================
@@ -25,29 +39,20 @@ function initGrid() {
       const cell = document.createElement("div");
       cell.className = "cell";
 
-      let pressTimer = null;
-      let isLongPress = false;
+      cell.onclick = async () => {
 
-      // タップ
-      cell.onclick = () => {
-        if (isLongPress) {
-          isLongPress = false;
+        if (deleteMode) {
+          const obj = getObjectAt(x, y);
+          if (!obj) return;
+
+          if (confirm("削除する？")) {
+            await deleteObjectAt(x, y);
+          }
           return;
         }
+
         ui.openSheet(x, y);
       };
-
-      // 長押し
-      cell.addEventListener("touchstart", () => {
-        pressTimer = setTimeout(async () => {
-          isLongPress = true;
-          navigator.vibrate?.(30);
-          await deleteObjectAt(x, y);
-        }, 3000);
-      });
-
-      cell.addEventListener("touchend", () => clearTimeout(pressTimer));
-      cell.addEventListener("touchmove", () => clearTimeout(pressTimer));
 
       grid.appendChild(cell);
     }
