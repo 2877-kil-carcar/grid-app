@@ -15,9 +15,6 @@ import * as ui from "./ui.js";
 const grid = document.getElementById("grid");
 
 let deleteMode = false;
-
-let activeCell = null;
-
 let activeCellPos = null;
 
 const btn = document.getElementById("deleteModeBtn");
@@ -26,9 +23,8 @@ btn.onclick = () => {
   deleteMode = !deleteMode;
 
   btn.textContent = deleteMode ? "削除モードON" : "削除モードOFF";
-  btn.style.background = deleteMode ? "red" : "";
+  btn.style.background = deleteMode ? "#2563eb" : "";
 
-  // ★ ここ追加（重要）
   document.body.classList.toggle("delete-mode", deleteMode);
 };
 
@@ -68,37 +64,19 @@ function initGrid() {
       const cell = document.createElement("div");
       cell.className = "cell";
 
-      cell.onclick = async () => {
-      
-        // ★ 先にハイライト
-        activeCellPos = { x, y };
-      
-        // ★ 編集モード制御
-        if (!editMode) return;
-      
-        if (deleteMode) {
-          const obj = getObjectAt(x, y);
-          if (!obj) return;
-      
-          if (confirm("削除する？")) {
-            await deleteObjectAt(x, y);
-          }
-          return;
-        }
-      
-        ui.openSheet(x, y);
-      };
-      
       grid.appendChild(cell);
     }
   }
+
+  render();
 }
 
 // ==========================
 // 配置処理（移動対応）
 // ==========================
 ui.setOnSelectCallback(async (type, memberId, pos) => {
-  // ★ 制限チェック
+
+  // 本部は1つまで
   if (type === "base") {
     const count = objects.filter(o => o.type === "base").length;
     if (count >= 1) {
@@ -106,7 +84,8 @@ ui.setOnSelectCallback(async (type, memberId, pos) => {
       return;
     }
   }
-  
+
+  // 熊罠は2つまで
   if (type === "trap") {
     const count = objects.filter(o => o.type === "trap").length;
     if (count >= 2) {
@@ -119,6 +98,7 @@ ui.setOnSelectCallback(async (type, memberId, pos) => {
   if (type === "player") size = 2;
   if (type === "trap" || type === "base") size = 3;
 
+  // 同盟員は移動扱い
   if (type === "player") {
     const existing = objects.find(o =>
       o.type === "player" && o.memberId === memberId
@@ -156,7 +136,7 @@ ui.setOnSelectCallback(async (type, memberId, pos) => {
 });
 
 // ==========================
-// 描画（FC対応版）
+// 描画
 // ==========================
 function render() {
 
@@ -168,13 +148,22 @@ function render() {
     const x = i % GRID_COLS;
     const y = Math.floor(i / GRID_COLS);
 
-    // ★ 完全リセット
     cell.className = "cell";
     cell.innerHTML = "";
 
-    // ★ クリック再設定（これが重要）
+    // ★ クリック処理は render 側で一元化
     cell.onclick = async () => {
 
+      // まずタップ位置を記録して再描画
+      activeCellPos = { x, y };
+      render();
+
+      // 編集モードOFFならここで終了
+      if (!editMode) {
+        return;
+      }
+
+      // 削除モード
       if (deleteMode) {
         const obj = getObjectAt(x, y);
         if (!obj) return;
@@ -185,6 +174,7 @@ function render() {
         return;
       }
 
+      // 通常は選択シート
       ui.openSheet(x, y);
     };
 
@@ -195,7 +185,13 @@ function render() {
       if (obj.type === "player") {
 
         const m = members.find(m => m.id === obj.memberId);
-        if (!m) continue;
+        if (!m) {
+          // ハイライトだけは残す
+          if (activeCellPos && activeCellPos.x === x && activeCellPos.y === y) {
+            cell.classList.add("active");
+          }
+          continue;
+        }
 
         const nameDiv = document.createElement("div");
         nameDiv.className = "cell-name";
@@ -209,22 +205,30 @@ function render() {
         cell.appendChild(furnaceDiv);
 
         if (m.furnace.startsWith("FC")) {
-          const lv = parseInt(m.furnace.replace("FC",""));
-          cell.classList.add(`fc${Math.min(lv,10)}`);
+          const lv = parseInt(m.furnace.replace("FC", ""), 10);
+          cell.classList.add(`fc${Math.min(lv, 10)}`);
         }
 
       } else if (obj.type === "flag") {
         cell.textContent = "🚩";
+
       } else if (obj.type === "trap") {
         cell.textContent = "🪤";
+
       } else if (obj.type === "base") {
         cell.textContent = "🏰";
       }
 
       drawMultiBorder(cell, obj, x, y);
     }
+
+    // ★ 最後にハイライト復元
+    if (activeCellPos && activeCellPos.x === x && activeCellPos.y === y) {
+      cell.classList.add("active");
+    }
   }
 }
+
 // ==========================
 // 削除
 // ==========================
@@ -270,22 +274,8 @@ async function deleteOverlappingObjects(newObj) {
 }
 
 // ==========================
-// Firestore同期
+// 複数マス枠
 // ==========================
-onSnapshot(collection(db, "objects"), snap => {
-  setObjects(snap.docs.map(d => d.data()));
-  render();
-});
-
-onSnapshot(collection(db, "members"), snap => {
-  setMembers(snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  })));
-
-  render();
-});
-
 function drawMultiBorder(cell, obj, x, y) {
 
   const isTop = y === obj.y;
@@ -298,6 +288,22 @@ function drawMultiBorder(cell, obj, x, y) {
   if (isLeft) cell.classList.add("border-left");
   if (isRight) cell.classList.add("border-right");
 }
+
+// ==========================
+// Firestore同期
+// ==========================
+onSnapshot(collection(db, "objects"), snap => {
+  setObjects(snap.docs.map(d => d.data()));
+  render();
+});
+
+onSnapshot(collection(db, "members"), snap => {
+  setMembers(snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  })));
+  render();
+});
 
 // ==========================
 initGrid();
