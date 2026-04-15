@@ -15,6 +15,7 @@
       <button id="deleteModeBtn" type="button">削除モードOFF</button>
       <button id="editModeBtn" type="button">編集モードOFF</button>
       <a id="memberLink" href="./members.html">同盟員登録</a>
+      <div id="currentPosTop"></div>
     </div>
   </div>
 
@@ -25,10 +26,12 @@
   <div id="sheet">
     <div class="sheet-content">
       <div id="list"></div>
+      <div id="currentPos" style="margin-bottom:8px; font-weight:bold;"></div>
       <button type="button" onclick="closeSheet()">閉じる</button>
     </div>
   </div>
-
+  <div id="coordHint"></div>
   <script type="module" src="./js/app.js"></script>
+
 </body>
 </html>

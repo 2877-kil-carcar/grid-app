@@ -190,6 +190,9 @@ body.edit-mode.delete-mode .cell.player-normal {
   right: 2px;
   font-size: 9px;
   line-height: 10px;
+
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 .cell-furnace {
@@ -217,4 +220,27 @@ body.edit-mode.delete-mode .cell.player-normal {
 
 body.edit-mode {
   outline: 3px solid #16a34a;
+}
+
+.coord-cell {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+#currentPos {
+  color: #facc15; /* 見やすい黄色 */
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.7);
+}
+
+#currentPosTop {
+  margin-left: auto;
+  font-weight: bold;
+  color: #facc15;
+  font-size: 14px;
+
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.7);
 }

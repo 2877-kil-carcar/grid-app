@@ -175,9 +175,40 @@ function render() {
 
     cell.className = "cell";
     cell.innerHTML = "";
+    
 
-    cell.onclick = async () => {
+    // ==========================
+    // 座標表示
+    // ==========================
+
+    // 左上 → Y\X
+    if (x === 0 && y === 0) {
+      cell.textContent = "Y\\X";
+      cell.classList.add("coord-cell");
+      continue;
+    }
+
+    // 上段 → X座標
+    if (y === 0) {
+      const xVal = 411 + x;
+      cell.textContent = xVal;
+      cell.classList.add("coord-cell");
+      continue;
+    }
+
+    // 左列 → Y座標
+    if (x === 0) {
+      const yVal = 659 - y;
+      cell.textContent = yVal;
+      cell.classList.add("coord-cell");
+      continue;
+    }    
+
+    cell.onclick = async (e) => {
+
       activeCellPos = { x, y };
+
+      render();
 
       if (deleteMode) {
         if (!editMode) {
@@ -255,6 +286,9 @@ function render() {
       cell.classList.add("flash");
     }
   }
+  adjustTextSize();
+  updateCurrentPos();
+  updateCurrentPosTop();
 }
 
 // ==========================
@@ -332,17 +366,27 @@ onSnapshot(collection(db, "members"), snap => {
 // ジャンプ
 // ==========================
 export function jumpTo(x, y) {
+
   const cellSize = 34 + 3;
-  const scrollX = x * cellSize;
-  const scrollY = y * cellSize;
+
+  // ★ scale考慮
+  const targetX = x * cellSize * scale;
+  const targetY = y * cellSize * scale;
+
+  const viewWidth = wrapper.clientWidth;
+  const viewHeight = wrapper.clientHeight;
+
+  // ★ 中央寄せ
+  const scrollX = targetX - viewWidth / 2 + (cellSize * scale) / 2;
+  const scrollY = targetY - viewHeight / 2 + (cellSize * scale) / 2;
 
   activeCellPos = { x, y };
   flashCellPos = { x, y };
   render();
 
   wrapper.scrollTo({
-    left: scrollX - 100,
-    top: scrollY - 100,
+    left: scrollX,
+    top: scrollY,
     behavior: "smooth"
   });
 
@@ -404,5 +448,61 @@ wrapper.addEventListener("touchend", (e) => {
   }
 });
 
+function adjustTextSize() {
+  const names = document.querySelectorAll(".cell-name");
+
+  names.forEach(el => {
+    let size = 9; // 初期サイズ
+    el.style.fontSize = size + "px";
+
+    // 高さオーバーなら縮小
+    while (el.scrollHeight > el.clientHeight && size > 6) {
+      size--;
+      el.style.fontSize = size + "px";
+    }
+  });
+}
+
+function updateCurrentPos() {
+  const el = document.getElementById("currentPos");
+  if (!el) return;
+
+  if (!editMode) {
+    el.textContent = "";
+    return;
+  }
+
+
+  if (!activeCellPos) {
+    el.textContent = "";
+    return;
+  }
+
+  const x = activeCellPos.x;
+  const y = activeCellPos.y;
+
+  const xVal = 411 + x;
+  const yVal = 659 - y;
+
+  el.textContent = `現在地 X:${xVal}  Y:${yVal}`;
+}
+
+function updateCurrentPosTop() {
+  const el = document.getElementById("currentPosTop");
+  if (!el) return;
+
+  if (!activeCellPos) {
+    el.textContent = "";
+    return;
+  }
+
+  const x = activeCellPos.x;
+  const y = activeCellPos.y;
+
+  const xVal = 411 + x;
+  const yVal = 659 - y;
+
+  el.textContent = `X:${xVal}  Y:${yVal}`;
+}
 // ==========================
 initGrid();
