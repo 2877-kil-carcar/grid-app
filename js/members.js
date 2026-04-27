@@ -29,6 +29,23 @@ if (!isAdmin) {
 
 const dropdownRankOrder = { R5: 0, R4: 1, R3: 2, R2: 3, R1: 4, R0: 5 };
 
+// ドロップダウン全体でスクロール中かを追跡
+let dropdownScrolled = false;
+let dropdownTouchStartY = 0;
+let blurTimer = null;
+
+nameDropdown.addEventListener("touchstart", (e) => {
+  clearTimeout(blurTimer);
+  dropdownScrolled = false;
+  dropdownTouchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+nameDropdown.addEventListener("touchmove", (e) => {
+  if (Math.abs(e.touches[0].clientY - dropdownTouchStartY) > 5) {
+    dropdownScrolled = true;
+  }
+}, { passive: true });
+
 function buildNameDropdown(filter) {
   nameDropdown.innerHTML = "";
 
@@ -69,14 +86,9 @@ function buildNameDropdown(filter) {
       selectMember(docSnap);
     };
 
-    // スマホ: touchstart位置を記録し、touchendで移動距離が小さい場合のみ選択
-    let touchStartY = 0;
-    item.addEventListener("touchstart", (e) => {
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
+    // スマホ: スクロール中でなければ選択
     item.addEventListener("touchend", (e) => {
-      const moved = Math.abs(e.changedTouches[0].clientY - touchStartY);
-      if (moved < 8) {
+      if (!dropdownScrolled) {
         e.preventDefault();
         selectMember(docSnap);
       }
@@ -98,6 +110,7 @@ function selectMember(docSnap) {
 }
 
 nameInput.addEventListener("focus", () => {
+  clearTimeout(blurTimer);
   buildNameDropdown(nameInput.value.trim());
 });
 
@@ -117,7 +130,7 @@ nameInput.addEventListener("input", () => {
 });
 
 nameInput.addEventListener("blur", () => {
-  setTimeout(() => nameDropdown.classList.remove("show"), 150);
+  blurTimer = setTimeout(() => nameDropdown.classList.remove("show"), 300);
 });
 
 function initFurnace() {
