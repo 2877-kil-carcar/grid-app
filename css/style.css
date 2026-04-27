@@ -115,7 +115,7 @@ body {
   right: 0;
   bottom: 0;
   overflow: auto;
-  touch-action: pan-x pan-y;
+  touch-action: none;
 }
 
 #grid {
@@ -124,6 +124,7 @@ body {
   gap: 3px;
   padding: 8px;
   transform-origin: top left;
+  will-change: transform;
 }
 
 /* ===== マス ===== */
