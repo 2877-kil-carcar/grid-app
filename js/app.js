@@ -372,41 +372,85 @@ wrapper.addEventListener("wheel", (e) => {
   grid.style.transform = `scale(${scale})`;
 });
 
-wrapper.addEventListener("touchmove", (e) => {
-  if (e.touches.length !== 2) return;
+// 1本指パン用
+let panStartX = 0, panStartY = 0;
+let panScrollLeft = 0, panScrollTop = 0;
+let isSingleTouch = false;
 
+// ピンチ zoom rAF 用
+let pendingScrollLeft = null;
+let pendingScrollTop  = null;
+let rafId = null;
+
+wrapper.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) {
+    isSingleTouch = true;
+    panStartX    = e.touches[0].clientX;
+    panStartY    = e.touches[0].clientY;
+    panScrollLeft = wrapper.scrollLeft;
+    panScrollTop  = wrapper.scrollTop;
+  } else if (e.touches.length === 2) {
+    isSingleTouch = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastDist = Math.sqrt(dx * dx + dy * dy);
+    pendingScrollLeft = null;
+    pendingScrollTop  = null;
+  }
+}, { passive: true });
+
+wrapper.addEventListener("touchmove", (e) => {
   e.preventDefault();
+
+  // 1本指：パン
+  if (e.touches.length === 1 && isSingleTouch) {
+    wrapper.scrollLeft = panScrollLeft - (e.touches[0].clientX - panStartX);
+    wrapper.scrollTop  = panScrollTop  - (e.touches[0].clientY - panStartY);
+    return;
+  }
+
+  // 2本指：ピンチズーム
+  if (e.touches.length !== 2 || !lastDist) return;
 
   const t0 = e.touches[0];
   const t1 = e.touches[1];
-
   const dx = t0.clientX - t1.clientX;
   const dy = t0.clientY - t1.clientY;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (lastDist && dist > 0) {
+  if (dist > 0) {
     const prevScale = scale;
     scale = Math.min(Math.max(0.3, scale * (dist / lastDist)), 3);
-
     const ratio = scale / prevScale;
 
     const rect = wrapper.getBoundingClientRect();
     const midX = (t0.clientX + t1.clientX) / 2 - rect.left;
     const midY = (t0.clientY + t1.clientY) / 2 - rect.top;
 
-    wrapper.scrollLeft = (wrapper.scrollLeft + midX) * ratio - midX;
-    wrapper.scrollTop  = (wrapper.scrollTop  + midY) * ratio - midY;
+    // 前フレームの未適用スクロール値を引き継ぐ
+    const baseLeft = pendingScrollLeft ?? wrapper.scrollLeft;
+    const baseTop  = pendingScrollTop  ?? wrapper.scrollTop;
+    pendingScrollLeft = (baseLeft + midX) * ratio - midX;
+    pendingScrollTop  = (baseTop  + midY) * ratio - midY;
 
-    grid.style.transform = `scale(${scale})`;
+    // 1フレームに1回だけDOM更新
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      wrapper.scrollLeft = pendingScrollLeft;
+      wrapper.scrollTop  = pendingScrollTop;
+      grid.style.transform = `scale(${scale})`;
+      pendingScrollLeft = null;
+      pendingScrollTop  = null;
+      rafId = null;
+    });
   }
 
   lastDist = dist;
 }, { passive: false });
 
 wrapper.addEventListener("touchend", (e) => {
-  if (e.touches.length < 2) {
-    lastDist = null;
-  }
+  if (e.touches.length < 2) lastDist = null;
+  if (e.touches.length === 0) isSingleTouch = false;
 });
 
 function adjustTextSize() {
