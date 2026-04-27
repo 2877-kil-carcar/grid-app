@@ -377,18 +377,25 @@ wrapper.addEventListener("touchmove", (e) => {
 
   e.preventDefault();
 
-  const dx = e.touches[0].clientX - e.touches[1].clientX;
-  const dy = e.touches[0].clientY - e.touches[1].clientY;
+  const t0 = e.touches[0];
+  const t1 = e.touches[1];
+
+  const dx = t0.clientX - t1.clientX;
+  const dy = t0.clientY - t1.clientY;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (lastDist) {
+  if (lastDist && dist > 0) {
     const prevScale = scale;
-    const delta = dist - lastDist;
-    scale = Math.min(Math.max(0.5, scale + delta * 0.005), 2);
+    scale = Math.min(Math.max(0.3, scale * (dist / lastDist)), 3);
 
     const ratio = scale / prevScale;
-    wrapper.scrollLeft *= ratio;
-    wrapper.scrollTop *= ratio;
+
+    const rect = wrapper.getBoundingClientRect();
+    const midX = (t0.clientX + t1.clientX) / 2 - rect.left;
+    const midY = (t0.clientY + t1.clientY) / 2 - rect.top;
+
+    wrapper.scrollLeft = (wrapper.scrollLeft + midX) * ratio - midX;
+    wrapper.scrollTop  = (wrapper.scrollTop  + midY) * ratio - midY;
 
     grid.style.transform = `scale(${scale})`;
   }
