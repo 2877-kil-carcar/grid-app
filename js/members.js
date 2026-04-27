@@ -62,14 +62,26 @@ function buildNameDropdown(filter) {
     const item = document.createElement("div");
     item.textContent = d.name;
     item.className = "name-dropdown-item";
+
+    // PC: mousedown（blur前に発火させるため）
     item.onmousedown = (e) => {
       e.preventDefault();
       selectMember(docSnap);
     };
-    item.ontouchstart = (e) => {
-      e.preventDefault();
-      selectMember(docSnap);
-    };
+
+    // スマホ: touchstart位置を記録し、touchendで移動距離が小さい場合のみ選択
+    let touchStartY = 0;
+    item.addEventListener("touchstart", (e) => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    item.addEventListener("touchend", (e) => {
+      const moved = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      if (moved < 8) {
+        e.preventDefault();
+        selectMember(docSnap);
+      }
+    }, { passive: false });
+
     nameDropdown.appendChild(item);
   });
 

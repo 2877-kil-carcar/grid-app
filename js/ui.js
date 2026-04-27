@@ -75,8 +75,44 @@ function renderListOnly() {
     }
   }
 
-  // ===== 同盟員 =====
   const rankOrder = { R5: 0, R4: 1, R3: 2, R2: 3, R1: 4, R0: 5 };
+
+  // ===== 未配置（先頭） =====
+  const unplaced = members.filter(m =>
+    !objects.find(o => o.type === "player" && o.memberId === m.id)
+  );
+
+  if (unplaced.length > 0) {
+    const title = document.createElement("div");
+    title.textContent = "未配置";
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "4px";
+    list.appendChild(title);
+
+    unplaced
+      .sort((a, b) => {
+        const ra = rankOrder[a.rank] ?? 6;
+        const rb = rankOrder[b.rank] ?? 6;
+        if (ra !== rb) return ra - rb;
+        return a.name.localeCompare(b.name);
+      })
+      .forEach(m => {
+        if (adminApproved) {
+          addItem(list, "⚠ " + m.name, () => select("player", m.id));
+        } else {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.textContent = "⚠ " + m.name;
+          div.style.opacity = "0.6";
+          div.style.cursor = "default";
+          list.appendChild(div);
+        }
+      });
+
+    addDivider(list);
+  }
+
+  // ===== 同盟員 =====
   const filtered = members
     .filter(m => m.name.toLowerCase().includes(filterText))
     .sort((a, b) => {
@@ -147,35 +183,6 @@ function renderListOnly() {
     addItem(list, "🕌 本部", () => select("base"));
     addItem(list, "⛏️ 大型採取場", () => select("mine"));
     addItem(list, "🍕 同盟資源", () => select("food"));
-  }
-
-  addDivider(list);
-
-  const unplaced = members.filter(m =>
-    !objects.find(o => o.type === "player" && o.memberId === m.id)
-  );
-
-  if (unplaced.length > 0) {
-    const title = document.createElement("div");
-    title.textContent = "未配置";
-    title.style.marginTop = "10px";
-    title.style.fontWeight = "bold";
-    list.appendChild(title);
-
-    unplaced.forEach(m => {
-      if (adminApproved) {
-        addItem(list, "⚠ " + m.name, () => {
-          select("player", m.id);
-        });
-      } else {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.textContent = "⚠ " + m.name;
-        div.style.opacity = "0.6";
-        div.style.cursor = "default";
-        list.appendChild(div);
-      }
-    });
   }
 }
 
