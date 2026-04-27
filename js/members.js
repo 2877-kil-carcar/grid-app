@@ -13,9 +13,100 @@ import {
 
 const nameInput = document.getElementById("name");
 const furnaceSelect = document.getElementById("furnace");
+const rankSelect = document.getElementById("rank");
 const list = document.getElementById("memberList");
+const membersForm = document.getElementById("membersForm");
+const addBtn = document.querySelector("#membersForm button");
+const nameDropdown = document.getElementById("nameDropdown");
+
+const isAdmin = sessionStorage.getItem("adminApproved") === "true";
 
 let memberCount = 0;
+
+if (!isAdmin) {
+  membersForm.style.display = "none";
+}
+
+const dropdownRankOrder = { R5: 0, R4: 1, R3: 2, R2: 3, R1: 4, R0: 5 };
+
+function buildNameDropdown(filter) {
+  nameDropdown.innerHTML = "";
+
+  const filtered = window._docs
+    .filter(d => filter === "" || d.data().name.toLowerCase().includes(filter.toLowerCase()))
+    .sort((a, b) => {
+      const ra = dropdownRankOrder[a.data().rank] ?? 6;
+      const rb = dropdownRankOrder[b.data().rank] ?? 6;
+      if (ra !== rb) return ra - rb;
+      return a.data().name.localeCompare(b.data().name);
+    });
+
+  if (filtered.length === 0) {
+    nameDropdown.classList.remove("show");
+    return;
+  }
+
+  let currentRank = null;
+  filtered.forEach(docSnap => {
+    const d = docSnap.data();
+    const rank = d.rank || "－";
+
+    if (rank !== currentRank) {
+      const header = document.createElement("div");
+      header.textContent = rank;
+      header.className = "name-dropdown-header";
+      nameDropdown.appendChild(header);
+      currentRank = rank;
+    }
+
+    const item = document.createElement("div");
+    item.textContent = d.name;
+    item.className = "name-dropdown-item";
+    item.onmousedown = (e) => {
+      e.preventDefault();
+      selectMember(docSnap);
+    };
+    item.ontouchstart = (e) => {
+      e.preventDefault();
+      selectMember(docSnap);
+    };
+    nameDropdown.appendChild(item);
+  });
+
+  nameDropdown.classList.add("show");
+}
+
+function selectMember(docSnap) {
+  const d = docSnap.data();
+  nameInput.value = d.name;
+  furnaceSelect.value = d.furnace;
+  rankSelect.value = d.rank || "R5";
+  addBtn.textContent = "更新";
+  nameDropdown.classList.remove("show");
+}
+
+nameInput.addEventListener("focus", () => {
+  buildNameDropdown(nameInput.value.trim());
+});
+
+nameInput.addEventListener("input", () => {
+  const name = nameInput.value.trim();
+  buildNameDropdown(name);
+
+  const existing = window._docs.find(d => d.data().name === name);
+  if (existing) {
+    const d = existing.data();
+    furnaceSelect.value = d.furnace;
+    rankSelect.value = d.rank || "R5";
+    addBtn.textContent = "更新";
+  } else {
+    addBtn.textContent = "追加";
+  }
+});
+
+nameInput.addEventListener("blur", () => {
+  setTimeout(() => nameDropdown.classList.remove("show"), 150);
+});
 
 function initFurnace() {
   for (let i = 1; i <= 30; i++) addOption(i);
@@ -30,66 +121,103 @@ function addOption(val) {
 }
 
 async function addMember() {
-  if (memberCount >= 100) {
-    alert("100人まで");
-    return;
-  }
+  if (!isAdmin) return;
 
   const name = nameInput.value.trim();
   const furnace = furnaceSelect.value;
+  const rank = rankSelect.value;
 
   if (!name) {
     alert("名前必須");
     return;
   }
 
-  const exists = window._docs.find(d => d.data().name === name);
+  const existing = window._docs.find(d => d.data().name === name);
 
-  if (exists) {
-    if (!confirm("既に存在。溶鉱炉を更新する？")) return;
-
-    await setDoc(doc(db, "members", exists.id), {
-      name,
+  if (existing) {
+    // 既存メンバーの更新（名前以外）
+    await setDoc(doc(db, "members", existing.id), {
+      name: existing.data().name,
       furnace,
-      createdAt: exists.data().createdAt
+      rank,
+      createdAt: existing.data().createdAt
     });
-
     nameInput.value = "";
+    addBtn.textContent = "追加";
+    return;
+  }
+
+  // 新規登録
+  if (memberCount >= 100) {
+    alert("100人まで");
     return;
   }
 
   await addDoc(collection(db, "members"), {
     name,
     furnace,
+    rank,
     createdAt: Date.now()
   });
 
   nameInput.value = "";
 }
 
+const rankOrder = { R5: 0, R4: 1, R3: 2, R2: 3, R1: 4, R0: 5 };
+
 const q = collection(db, "members");
 
 onSnapshot(q, snap => {
   window._docs = snap.docs;
   memberCount = snap.size;
+
+  // ドロップダウンを最新状態に保つ（表示中なら再描画）
+  if (nameDropdown.classList.contains("show")) {
+    buildNameDropdown(nameInput.value.trim());
+  }
+
   list.innerHTML = "";
 
-  snap.docs
-    .sort((a, b) => a.data().name.localeCompare(b.data().name))
-    .forEach(docSnap => {
-      const d = docSnap.data();
+  const sorted = snap.docs.sort((a, b) => {
+    const ra = rankOrder[a.data().rank] ?? 6;
+    const rb = rankOrder[b.data().rank] ?? 6;
+    if (ra !== rb) return ra - rb;
+    return a.data().name.localeCompare(b.data().name);
+  });
 
-      const div = document.createElement("div");
-      div.textContent = `${d.name} (${d.furnace})`;
+  let currentRank = null;
 
+  sorted.forEach(docSnap => {
+    const d = docSnap.data();
+    const rank = d.rank || "－";
+
+    if (rank !== currentRank) {
+      const header = document.createElement("div");
+      header.textContent = rank;
+      header.style.fontWeight = "bold";
+      header.style.color = "#facc15";
+      header.style.marginTop = currentRank === null ? "4px" : "12px";
+      header.style.marginBottom = "4px";
+      list.appendChild(header);
+      currentRank = rank;
+    }
+
+    const div = document.createElement("div");
+    div.style.padding = "6px 8px";
+    div.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+    div.style.cursor = isAdmin ? "pointer" : "default";
+    div.textContent = `${d.name} (${d.furnace})`;
+
+    if (isAdmin) {
       div.onclick = async () => {
         if (confirm("削除する？")) {
           await deleteDoc(doc(db, "members", docSnap.id));
         }
       };
+    }
 
-      list.appendChild(div);
-    });
+    list.appendChild(div);
+  });
 });
 
 window.addMember = addMember;

@@ -1,5 +1,6 @@
-import { members, objects } from "./data.js";
-import { jumpTo } from "./app.js";
+import { members, objects, adminApproved } from "./data.js";
+import { jumpTo, deleteObjectAt } from "./app.js";
+import { getObjectAt } from "./grid.js";
 
 let current = null;
 let filterText = "";
@@ -16,12 +17,9 @@ export function closeSheet() {
 }
 
 function buildList() {
-
   const list = document.getElementById("list");
 
-  // ★ 初回だけinput作る
   if (!inputEl) {
-
     inputEl = document.createElement("input");
     inputEl.placeholder = "検索...";
 
@@ -33,32 +31,75 @@ function buildList() {
 
     inputEl.oninput = (e) => {
       filterText = e.target.value.toLowerCase();
-      renderListOnly(); // ★ここが重要
+      renderListOnly();
     };
 
     list.appendChild(inputEl);
   }
 
   inputEl.value = filterText;
-
   renderListOnly();
 }
 
 function renderListOnly() {
-
   const list = document.getElementById("list");
 
-  // ★ input以外を消す
   while (list.children.length > 1) {
     list.removeChild(list.lastChild);
   }
 
+  // 削除ボタン（管理者承認済み＆オブジェクトがある場合のみ）
+  if (adminApproved && current) {
+    const obj = getObjectAt(current.x, current.y);
+    if (obj) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "🗑 削除";
+      deleteBtn.style.cssText = `
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+      `;
+      deleteBtn.onclick = async () => {
+        if (confirm("削除する？")) {
+          await deleteObjectAt(current.x, current.y);
+          closeSheet();
+        }
+      };
+      list.appendChild(deleteBtn);
+    }
+  }
+
   // ===== 同盟員 =====
+  const rankOrder = { R5: 0, R4: 1, R3: 2, R2: 3, R1: 4, R0: 5 };
   const filtered = members
     .filter(m => m.name.toLowerCase().includes(filterText))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      const ra = rankOrder[a.rank] ?? 6;
+      const rb = rankOrder[b.rank] ?? 6;
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name);
+    });
+
+  let currentRank = null;
 
   filtered.forEach(m => {
+    const rank = m.rank || "－";
+    if (rank !== currentRank) {
+      const header = document.createElement("div");
+      header.textContent = rank;
+      header.style.fontWeight = "bold";
+      header.style.color = "#facc15";
+      header.style.marginTop = currentRank === null ? "0" : "10px";
+      header.style.marginBottom = "4px";
+      list.appendChild(header);
+      currentRank = rank;
+    }
 
     const row = document.createElement("div");
     row.style.display = "flex";
@@ -69,9 +110,15 @@ function renderListOnly() {
     placeBtn.className = "item";
     placeBtn.textContent = m.name;
     placeBtn.style.flex = "1";
-    placeBtn.onclick = () => {
-      select("player", m.id);
-    };
+
+    if (adminApproved) {
+      placeBtn.onclick = () => {
+        select("player", m.id);
+      };
+    } else {
+      placeBtn.style.opacity = "0.6";
+      placeBtn.style.cursor = "default";
+    }
 
     row.appendChild(placeBtn);
 
@@ -83,7 +130,7 @@ function renderListOnly() {
       jumpBtn.style.width = "48px";
       jumpBtn.style.textAlign = "center";
       jumpBtn.onclick = () => {
-        jumpTo(obj.x, obj.y);
+        jumpTo(obj.x, obj.y + obj.size - 1);
         closeSheet();
       };
       row.appendChild(jumpBtn);
@@ -92,13 +139,15 @@ function renderListOnly() {
     list.appendChild(row);
   });
 
-  addDivider(list);
-
-  addItem(list, "🚩 旗", () => select("flag"));
-  addItem(list, "🐻 熊罠", () => select("trap"));
-  addItem(list, "🕌 本部", () => select("base"));
-  addItem(list, "⛏️ 大型採取場", () => select("mine"));
-  addItem(list, "🍕 同盟資源", () => select("food"));
+  // 配置アイテム（管理者のみ）
+  if (adminApproved) {
+    addDivider(list);
+    addItem(list, "🚩 旗", () => select("flag"));
+    addItem(list, "🐻 熊罠", () => select("trap"));
+    addItem(list, "🕌 本部", () => select("base"));
+    addItem(list, "⛏️ 大型採取場", () => select("mine"));
+    addItem(list, "🍕 同盟資源", () => select("food"));
+  }
 
   addDivider(list);
 
@@ -107,7 +156,6 @@ function renderListOnly() {
   );
 
   if (unplaced.length > 0) {
-
     const title = document.createElement("div");
     title.textContent = "未配置";
     title.style.marginTop = "10px";
@@ -115,9 +163,18 @@ function renderListOnly() {
     list.appendChild(title);
 
     unplaced.forEach(m => {
-      addItem(list, "⚠ " + m.name, () => {
-        select("player", m.id);
-      });
+      if (adminApproved) {
+        addItem(list, "⚠ " + m.name, () => {
+          select("player", m.id);
+        });
+      } else {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.textContent = "⚠ " + m.name;
+        div.style.opacity = "0.6";
+        div.style.cursor = "default";
+        list.appendChild(div);
+      }
     });
   }
 }

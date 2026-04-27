@@ -12,3 +12,9 @@ export let objects = [];
 export function setObjects(newData) {
   objects = newData;
 }
+
+export let adminApproved = false;
+
+export function setAdminApproved(v) {
+  adminApproved = v;
+}

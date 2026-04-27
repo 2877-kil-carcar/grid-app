@@ -8,77 +8,65 @@ import {
   collection
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { GRID_COLS, GRID_ROWS, members, setObjects, objects, setMembers } from "./data.js";
+import { GRID_COLS, GRID_ROWS, members, setObjects, objects, setMembers, adminApproved, setAdminApproved } from "./data.js";
 import { getObjectAt, canPlace } from "./grid.js";
 import * as ui from "./ui.js";
 
 const grid = document.getElementById("grid");
 const wrapper = document.getElementById("gridWrapper");
-const deleteBtn = document.getElementById("deleteModeBtn");
-const editBtn = document.getElementById("editModeBtn");
+const adminPwInput = document.getElementById("adminPwInput");
+const adminApproveBtn = document.getElementById("adminApproveBtn");
 const memberLink = document.getElementById("memberLink");
 
-let deleteMode = false;
-let editMode = false;
 let activeCellPos = null;
 let flashCellPos = null;
 let scale = 1;
 let lastDist = null;
 
-const EDIT_PASSWORD = "des";
+const ADMIN_PASSWORD = "des";
 
 // ==========================
-// 上部UI
+// 管理者承認
 // ==========================
-function toggleDeleteMode() {
-  deleteMode = !deleteMode;
-  deleteBtn.textContent = deleteMode ? "削除モードON" : "削除モードOFF";
-  deleteBtn.style.background = deleteMode ? "#2563eb" : "";
-  document.body.classList.toggle("delete-mode", deleteMode);
-}
-
-function toggleEditMode() {
-  if (!editMode) {
-    const input = prompt("パスワード入力");
-    if (input !== EDIT_PASSWORD) {
-      alert("パスワード違う");
+function toggleAdmin() {
+  if (adminApproved) {
+    setAdminApproved(false);
+    adminApproveBtn.textContent = "承認";
+    adminApproveBtn.style.background = "";
+    adminPwInput.value = "";
+    sessionStorage.removeItem("adminApproved");
+  } else {
+    const input = adminPwInput.value;
+    if (input !== ADMIN_PASSWORD) {
+      alert("パスワードが違います");
       return;
     }
-    editMode = true;
-  } else {
-    editMode = false;
+    setAdminApproved(true);
+    adminApproveBtn.textContent = "承認中";
+    adminApproveBtn.style.background = "#16a34a";
+    adminPwInput.value = "";
+    sessionStorage.setItem("adminApproved", "true");
   }
-
-  editBtn.textContent = editMode ? "編集モードON" : "編集モードOFF";
-  editBtn.style.background = editMode ? "#16a34a" : "";
-  document.body.classList.toggle("edit-mode", editMode);
+  render();
 }
 
-deleteBtn.addEventListener("click", toggleDeleteMode);
-editBtn.addEventListener("click", toggleEditMode);
-
-// スマホ対策
-deleteBtn.addEventListener("touchend", (e) => {
+adminApproveBtn.addEventListener("click", toggleAdmin);
+adminApproveBtn.addEventListener("touchend", (e) => {
   e.preventDefault();
-  toggleDeleteMode();
-});
-
-editBtn.addEventListener("touchend", (e) => {
-  e.preventDefault();
-  toggleEditMode();
+  toggleAdmin();
 });
 
 memberLink.addEventListener("click", (e) => {
-  if (!editMode) {
+  if (!adminApproved) {
     e.preventDefault();
-    alert("編集モードONで使用可能");
+    alert("管理者承認が必要です");
   }
 });
 
 memberLink.addEventListener("touchend", (e) => {
-  if (!editMode) {
+  if (!adminApproved) {
     e.preventDefault();
-    alert("編集モードONで使用可能");
+    alert("管理者承認が必要です");
   }
 });
 
@@ -120,12 +108,10 @@ ui.setOnSelectCallback(async (type, memberId, pos) => {
     }
   }
 
-let size = 1;
-
-if (type === "player") size = 2;
-if (type === "food") size = 2;   // ★ 同盟資源 2x2
-
-if (type === "trap" || type === "base" || type === "mine") size = 3; // ★ 採取場 3x3
+  let size = 1;
+  if (type === "player") size = 2;
+  if (type === "food") size = 2;
+  if (type === "trap" || type === "base" || type === "mine") size = 3;
 
   if (type === "player") {
     const existing = objects.find(o =>
@@ -142,21 +128,25 @@ if (type === "trap" || type === "base" || type === "mine") size = 3; // ★ 採�
     }
   }
 
-  if (!canPlace(pos.x, pos.y, size)) {
+  // タップ位置を左下角として、実際の左上角を算出
+  const placeX = pos.x;
+  const placeY = pos.y - (size - 1);
+
+  if (placeY < 1 || !canPlace(placeX, placeY, size)) {
     alert("置けない");
     return;
   }
 
-  const newObj = { x: pos.x, y: pos.y, size };
+  const newObj = { x: placeX, y: placeY, size };
   await deleteOverlappingObjects(newObj);
 
-  const key = `${pos.x}_${pos.y}`;
+  const key = `${placeX}_${placeY}`;
 
   await setDoc(doc(db, "objects", key), {
     type,
     memberId: memberId ?? null,
-    x: pos.x,
-    y: pos.y,
+    x: placeX,
+    y: placeY,
     size,
     updatedAt: Date.now()
   });
@@ -175,20 +165,16 @@ function render() {
 
     cell.className = "cell";
     cell.innerHTML = "";
-    
 
     // ==========================
     // 座標表示
     // ==========================
-
-    // 左上 → Y\X
     if (x === 0 && y === 0) {
       cell.textContent = "Y\\X";
       cell.classList.add("coord-cell");
       continue;
     }
 
-    // 上段 → X座標
     if (y === 0) {
       const xVal = 411 + x;
       cell.textContent = xVal;
@@ -196,45 +182,16 @@ function render() {
       continue;
     }
 
-    // 左列 → Y座標
     if (x === 0) {
       const yVal = 659 - y;
       cell.textContent = yVal;
       cell.classList.add("coord-cell");
       continue;
-    }    
+    }
 
     cell.onclick = async (e) => {
-
       activeCellPos = { x, y };
-
       render();
-
-      if (deleteMode) {
-        if (!editMode) {
-          render();
-          return;
-        }
-
-        const obj = getObjectAt(x, y);
-        if (!obj) {
-          render();
-          return;
-        }
-
-        if (confirm("削除する？")) {
-          await deleteObjectAt(x, y);
-        }
-
-        render();
-        return;
-      }
-
-      if (!editMode) {
-        render();
-        return;
-      }
-
       ui.openSheet(x, y);
     };
 
@@ -294,7 +251,7 @@ function render() {
 // ==========================
 // 削除
 // ==========================
-async function deleteObjectAt(x, y) {
+export async function deleteObjectAt(x, y) {
   const obj = getObjectAt(x, y);
   if (!obj) return;
 
@@ -368,15 +325,12 @@ onSnapshot(collection(db, "members"), snap => {
 export function jumpTo(x, y) {
 
   const cellSize = 34 + 3;
-
-  // ★ scale考慮
   const targetX = x * cellSize * scale;
   const targetY = y * cellSize * scale;
 
   const viewWidth = wrapper.clientWidth;
   const viewHeight = wrapper.clientHeight;
 
-  // ★ 中央寄せ
   const scrollX = targetX - viewWidth / 2 + (cellSize * scale) / 2;
   const scrollY = targetY - viewHeight / 2 + (cellSize * scale) / 2;
 
@@ -452,10 +406,9 @@ function adjustTextSize() {
   const names = document.querySelectorAll(".cell-name");
 
   names.forEach(el => {
-    let size = 9; // 初期サイズ
+    let size = 9;
     el.style.fontSize = size + "px";
 
-    // 高さオーバーなら縮小
     while (el.scrollHeight > el.clientHeight && size > 6) {
       size--;
       el.style.fontSize = size + "px";
@@ -466,12 +419,6 @@ function adjustTextSize() {
 function updateCurrentPos() {
   const el = document.getElementById("currentPos");
   if (!el) return;
-
-  if (!editMode) {
-    el.textContent = "";
-    return;
-  }
-
 
   if (!activeCellPos) {
     el.textContent = "";
