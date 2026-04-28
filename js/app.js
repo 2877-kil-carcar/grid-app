@@ -354,6 +354,8 @@ export function jumpTo(x, y) {
 // ズーム
 // ==========================
 wrapper.addEventListener("wheel", (e) => {
+  if (!e.ctrlKey) return; // 2本指スクロール → ネイティブスクロールに任せる
+
   e.preventDefault();
 
   const rect = wrapper.getBoundingClientRect();
@@ -370,7 +372,7 @@ wrapper.addEventListener("wheel", (e) => {
   wrapper.scrollTop = (wrapper.scrollTop + mouseY) * ratio - mouseY;
 
   grid.style.transform = `scale(${scale})`;
-});
+}, { passive: false });
 
 // 1本指パン用
 let panStartX = 0, panStartY = 0;
