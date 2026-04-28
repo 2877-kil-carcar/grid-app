@@ -202,16 +202,37 @@ function render() {
         const m = members.find(m => m.id === obj.memberId);
         if (!m) continue;
 
-        const nameDiv = document.createElement("div");
-        nameDiv.className = "cell-name";
-        nameDiv.textContent = m.name;
+        const isTopLeft     = x === obj.x     && y === obj.y;
+        const isTopRight    = x === obj.x + 1 && y === obj.y;
+        const isBottomLeft  = x === obj.x     && y === obj.y + 1;
+        const isBottomRight = x === obj.x + 1 && y === obj.y + 1;
 
-        const furnaceDiv = document.createElement("div");
-        furnaceDiv.className = "cell-furnace";
-        furnaceDiv.textContent = m.furnace;
-
-        cell.appendChild(nameDiv);
-        cell.appendChild(furnaceDiv);
+        if (isTopLeft) {
+          // 左上 → 名前
+          const nameDiv = document.createElement("div");
+          nameDiv.className = "cell-name";
+          nameDiv.textContent = m.name;
+          cell.appendChild(nameDiv);
+        } else if (isTopRight) {
+          // 右上 → 溶鉱炉
+          const furnaceDiv = document.createElement("div");
+          furnaceDiv.className = "cell-furnace-center";
+          furnaceDiv.textContent = m.furnace;
+          cell.appendChild(furnaceDiv);
+        } else if (isBottomLeft) {
+          // 左下 → 座標2行
+          const coordDiv = document.createElement("div");
+          coordDiv.className = "cell-furnace-center";
+          coordDiv.style.lineHeight = "1.3";
+          coordDiv.innerHTML = `X${411 + obj.x}<br>Y${659 - (obj.y + 1)}`;
+          cell.appendChild(coordDiv);
+        } else if (isBottomRight) {
+          // 右下 → 階級
+          const rankDiv = document.createElement("div");
+          rankDiv.className = "cell-furnace-center";
+          rankDiv.textContent = m.rank || "";
+          cell.appendChild(rankDiv);
+        }
 
         if (m.furnace.startsWith("FC")) {
           const lv = parseInt(m.furnace.replace("FC", ""), 10);

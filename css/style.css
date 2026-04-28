@@ -192,12 +192,13 @@ body {
 /* テキスト配置 */
 .cell-name {
   position: absolute;
-  top: 2px;
+  top: 50%;
   left: 2px;
   right: 2px;
+  transform: translateY(-50%);
   font-size: 9px;
   line-height: 10px;
-
+  text-align: center;
   word-break: normal;
   overflow-wrap: anywhere;
 }
@@ -211,18 +212,25 @@ body {
   opacity: 0.8;
 }
 
+.cell-furnace-center {
+  font-size: 9px;
+  font-weight: 600;
+  opacity: 0.85;
+  text-align: center;
+}
+
 /* 複数マス枠 */
 .border-top {
-  border-top: 2px solid rgba(255,255,255,0.6);
+  border-top: 3px solid #67e8f9;
 }
 .border-bottom {
-  border-bottom: 2px solid rgba(255,255,255,0.6);
+  border-bottom: 3px solid #67e8f9;
 }
 .border-left {
-  border-left: 2px solid rgba(255,255,255,0.6);
+  border-left: 3px solid #67e8f9;
 }
 .border-right {
-  border-right: 2px solid rgba(255,255,255,0.6);
+  border-right: 3px solid #67e8f9;
 }
 
 .coord-cell {
