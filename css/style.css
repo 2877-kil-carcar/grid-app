@@ -253,6 +253,18 @@ body {
   color: #facc15;
   font-size: 14px;
   text-shadow: 0 0 6px rgba(250, 204, 21, 0.7);
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* 配置の最終更新日時（座標の下に小さく表示） */
+.updated-at {
+  font-size: 11px;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: none;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* ===== 名前カスタムドロップダウン ===== */

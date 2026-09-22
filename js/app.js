@@ -490,6 +490,22 @@ function adjustTextSize() {
   });
 }
 
+// 選択セルにある配置の最終更新日時（なければ null）
+function getSelectedUpdatedAt() {
+  if (!activeCellPos) return null;
+  const obj = getObjectAt(activeCellPos.x, activeCellPos.y);
+  if (!obj || !obj.updatedAt) return null;
+  return obj.updatedAt;
+}
+
+// short=true のとき年を省略（右上バー用、スマホ幅で折り返さないように）
+function formatDateTime(ts, short = false) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, "0");
+  const md = `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return short ? md : `${d.getFullYear()}/${md}`;
+}
+
 function updateCurrentPos() {
   const el = document.getElementById("currentPos");
   if (!el) return;
@@ -506,6 +522,14 @@ function updateCurrentPos() {
   const yVal = 659 - y;
 
   el.textContent = `現在地 X:${xVal}  Y:${yVal}`;
+
+  const updatedAt = getSelectedUpdatedAt();
+  if (updatedAt) {
+    const upd = document.createElement("div");
+    upd.className = "updated-at";
+    upd.textContent = `最終更新 ${formatDateTime(updatedAt)}`;
+    el.appendChild(upd);
+  }
 }
 
 function updateCurrentPosTop() {
@@ -524,6 +548,14 @@ function updateCurrentPosTop() {
   const yVal = 659 - y;
 
   el.textContent = `X:${xVal}  Y:${yVal}`;
+
+  const updatedAt = getSelectedUpdatedAt();
+  if (updatedAt) {
+    const upd = document.createElement("div");
+    upd.className = "updated-at";
+    upd.textContent = `更新 ${formatDateTime(updatedAt, true)}`;
+    el.appendChild(upd);
+  }
 }
 // ==========================
 initGrid();
