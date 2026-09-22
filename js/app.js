@@ -329,6 +329,7 @@ function drawMultiBorder(cell, obj, x, y) {
 // ==========================
 onSnapshot(collection(db, "objects"), snap => {
   setObjects(snap.docs.map(d => d.data()));
+  updateGlobalUpdatedAt();
   render();
 });
 
@@ -504,6 +505,19 @@ function formatDateTime(ts, short = false) {
   const pad = n => String(n).padStart(2, "0");
   const md = `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   return short ? md : `${d.getFullYear()}/${md}`;
+}
+
+// 全配置の中で最も新しい updatedAt を見出し横に表示
+function updateGlobalUpdatedAt() {
+  const el = document.getElementById("globalUpdatedAt");
+  if (!el) return;
+
+  let latest = 0;
+  for (const obj of objects) {
+    if (obj.updatedAt && obj.updatedAt > latest) latest = obj.updatedAt;
+  }
+
+  el.textContent = latest ? `最終更新 ${formatDateTime(latest)}` : "";
 }
 
 function updateCurrentPos() {
